@@ -66,8 +66,7 @@ class DatabaseManager:
         session = None
         try:
             session = self.Session()
-            email_logs = session.query(EmailLog).all()
-            return email_logs
+            return session.query(EmailLog).where(EmailLog.processed == False).all()
         except Exception as e:
             print(f"Error reading email logs: {e}")
             logging.error(f"Error reading email logs: {e}")
@@ -85,7 +84,8 @@ class DatabaseManager:
                 subject=subject,
                 sender=sender,
                 body=body,
-                attachments=attachments
+                attachments=attachments,
+                processed=False
             )
             session.add(email_entry)
             session.commit()

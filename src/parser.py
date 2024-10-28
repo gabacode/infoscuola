@@ -1,5 +1,4 @@
 import time
-from sqlalchemy import select
 from database import DatabaseManager, EmailLog
 
 import logging
@@ -13,16 +12,10 @@ class Parser:
 
 
     def process_unprocessed_emails(self):
-        read_email_logs = self.db_manager.read_email_logs()
-        logging.info(f"Read {len(read_email_logs)} email logs.")
-        for email_log in read_email_logs:
-            log = EmailLog(
-                subject=email_log.subject,
-                sender=email_log.sender,
-                body=email_log.body,
-                attachments=email_log.attachments
-            )
-            logging.info(f"Processing email log: {log.to_dict()}")
+        mails = self.db_manager.read_email_logs()
+        logging.info(f"Read {len(mails)} emails.")
+        for mail in mails:
+            logging.info(mail.to_dict())
 
     def start_periodic_check(self, interval_seconds=10):
         """Run periodic check for unprocessed emails."""
