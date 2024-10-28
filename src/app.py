@@ -12,8 +12,7 @@ from fastapi import FastAPI
 
 from database import DatabaseManager
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s',
-                    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 load_dotenv()
 
