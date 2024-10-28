@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 
 from database import DatabaseManager
+from parser import Parser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
@@ -133,8 +134,9 @@ class EmailMonitor:
 
 
 monitor = EmailMonitor()
-
+parser = Parser()
 
 @app.on_event("startup")
 def startup_event():
     threading.Thread(target=monitor.run, daemon=True).start()
+    threading.Thread(target=parser.start_periodic_check, args=(60,), daemon=True).start()

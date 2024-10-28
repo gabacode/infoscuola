@@ -25,6 +25,16 @@ class EmailLog(Base):
         default=lambda: datetime.now(ZoneInfo('Europe/Rome'))
     )
 
+    def to_dict(self):
+        return {
+            "subject": self.subject,
+            "sender": self.sender,
+            "body": self.body,
+            "attachments": self.attachments,
+            "processed": self.processed,
+            "received_at": self.received_at
+        }
+
 
 class DatabaseManager:
     def __init__(self):
@@ -51,6 +61,19 @@ class DatabaseManager:
                 print(f"Database connection failed (attempt {attempt + 1}/{retries}): {e}")
                 time.sleep(delay)
         raise Exception("Failed to connect to the database after multiple attempts.")
+
+    def read_email_logs(self):
+        session = None
+        try:
+            session = self.Session()
+            email_logs = session.query(EmailLog).all()
+            return email_logs
+        except Exception as e:
+            print(f"Error reading email logs: {e}")
+            logging.error(f"Error reading email logs: {e}")
+            return []
+        finally:
+            session.close()
 
     def log_email(self, subject, sender, body, attachments=None):
         if attachments is None:
