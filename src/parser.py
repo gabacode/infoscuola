@@ -17,25 +17,29 @@ class Parser:
         self.operator = Operator()
         logging.info("Parser initialized.")
 
+    def process_email(self, log: EmailLog):
+        body = self.operator.ask(f"Riscrivi il seguente testo conservando solo i contenuti essenziali: {log.body}")
+        attachments = self.process_attachments(log.attachments)
+        summaries = self.operator.summarise_documents(attachments)
+        result = EmailLog(
+            id=log.id,
+            subject=log.subject,
+            sender=log.sender,
+            body=body,
+            attachments=attachments,
+            summary=summaries,
+            processed=True,
+            received_at=log.received_at
+        )
+        self.db_manager.update_email_log(result)
+        logging.info(f"Processed email: {log.id}")
+        return result.to_dict()
+
     def process_unprocessed_emails(self):
         logs = self.db_manager.read_email_logs()
         logging.info(f"Read {len(logs)} emails.")
         for log in logs:
-            body = self.operator.ask(f"Riscrivi il seguente testo conservando solo i contenuti essenziali: {log.body}")
-            attachments = self.process_attachments(log.attachments)
-            summaries = self.operator.summarise_documents(attachments)
-            result = EmailLog(
-                id=log.id,
-                subject=log.subject,
-                sender=log.sender,
-                body=body,
-                attachments=attachments,
-                summary=summaries,
-                processed=True,
-                received_at=log.received_at
-            )
-            self.db_manager.update_email_log(result)
-            logging.info(f"Processed email: {log.id}")
+           self.process_email(log)
 
     def start_periodic_check(self, interval_seconds=10):
         """Run periodic check for unprocessed emails."""
