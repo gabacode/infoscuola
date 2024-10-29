@@ -167,6 +167,7 @@ async def process_email(email_id: int) -> dict:
                     "summary": summary
                 })
         result = EmailLog(
+            id=log.id,
             subject=log.subject,
             sender=log.sender,
             body=rewritten_body,
@@ -175,6 +176,7 @@ async def process_email(email_id: int) -> dict:
             processed=True,
             received_at=log.received_at
         )
+        monitor.db_manager.update_email_log(result)
         return result.to_dict()
     except Exception as e:
         return {"error": str(e)}

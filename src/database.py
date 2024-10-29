@@ -108,3 +108,18 @@ class DatabaseManager:
             logging.error(f"Error logging email: {e}")
         finally:
             session.close()
+
+    def update_email_log(self, email_log: EmailLog):
+        session = None
+        try:
+            session = self.Session()
+            session.merge(email_log)
+            session.commit()
+            print(f"EmailLog (ID: {email_log.id}) updated successfully.")
+        except Exception as e:
+            print(f"Error updating email log (ID: {email_log.id}): {e}")
+            logging.error(f"Error updating email log (ID: {email_log.id}): {e}")
+            session.rollback()
+        finally:
+            if session:
+                session.close()
