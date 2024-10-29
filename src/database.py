@@ -19,11 +19,23 @@ class EmailLog(Base):
     sender = Column(String(255))
     body = Column(Text)
     attachments = Column(JSON)
+    summary = Column(JSON, nullable=True)
     processed = Column(Boolean, default=False)
     received_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(ZoneInfo('Europe/Rome'))
     )
+
+    def to_dict(self):
+        return {
+            "subject": self.subject,
+            "sender": self.sender,
+            "body": self.body,
+            "attachments": self.attachments,
+            "summary": self.summary,
+            "processed": self.processed,
+            "received_at": self.received_at
+        }
 
 
 class DatabaseManager:
@@ -52,6 +64,30 @@ class DatabaseManager:
                 time.sleep(delay)
         raise Exception("Failed to connect to the database after multiple attempts.")
 
+    def read_email_logs(self):
+        session = None
+        try:
+            session = self.Session()
+            return session.query(EmailLog).where(EmailLog.processed == False).all()
+        except Exception as e:
+            print(f"Error reading email logs: {e}")
+            logging.error(f"Error reading email logs: {e}")
+            return []
+        finally:
+            session.close()
+
+    def read_email_log(self, email_id):
+        session = None
+        try:
+            session = self.Session()
+            return session.query(EmailLog).get(email_id)
+        except Exception as e:
+            print(f"Error reading email log: {e}")
+            logging.error(f"Error reading email log: {e}")
+            return None
+        finally:
+            session.close()
+
     def log_email(self, subject, sender, body, attachments=None):
         if attachments is None:
             attachments = []
@@ -62,7 +98,8 @@ class DatabaseManager:
                 subject=subject,
                 sender=sender,
                 body=body,
-                attachments=attachments
+                attachments=attachments,
+                processed=False
             )
             session.add(email_entry)
             session.commit()
@@ -71,3 +108,18 @@ class DatabaseManager:
             logging.error(f"Error logging email: {e}")
         finally:
             session.close()
+
+    def update_email_log(self, email_log: EmailLog):
+        session = None
+        try:
+            session = self.Session()
+            session.merge(email_log)
+            session.commit()
+            print(f"EmailLog (ID: {email_log.id}) updated successfully.")
+        except Exception as e:
+            print(f"Error updating email log (ID: {email_log.id}): {e}")
+            logging.error(f"Error updating email log (ID: {email_log.id}): {e}")
+            session.rollback()
+        finally:
+            if session:
+                session.close()

@@ -10,10 +10,11 @@ from email.header import decode_header
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from database import DatabaseManager
+from database import DatabaseManager, EmailLog
+from parser import Parser
+from workers.operator import Operator
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s',
-                    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 load_dotenv()
 
@@ -120,7 +121,7 @@ class EmailMonitor:
         return safe_filename
 
     def run(self):
-        wait = 15
+        wait = 60
         try:
             while True:
                 if self.check_for_new_emails():
@@ -134,8 +135,48 @@ class EmailMonitor:
 
 
 monitor = EmailMonitor()
+parser = Parser()
+operator = Operator()
 
 
 @app.on_event("startup")
 def startup_event():
     threading.Thread(target=monitor.run, daemon=True).start()
+    threading.Thread(target=parser.start_periodic_check, args=(60,), daemon=True).start()
+
+
+@app.post("/process/{email_id}")
+async def process_email(email_id: int) -> dict:
+    try:
+        log: EmailLog = monitor.db_manager.read_email_log(email_id)
+        if not log:
+            return {"error": "Log not found."}
+        body = log.body
+        prompt = f"Riscrivi il seguente testo conservando solo i contenuti essenziali: {body}"
+        rewritten_body = operator.ask(prompt)
+        processed_attachments = parser.process_attachments(log.attachments)
+
+        summaries = []
+        for document in processed_attachments:
+            if document["text"]:
+                logging.info(f"Processing document: {document['file']}")
+                prompt = f"Genera un riassunto in italiano del documento {document['file']}: {document['text']}"
+                summary = operator.ask(prompt)
+                summaries.append({
+                    "file": document["file"],
+                    "summary": summary
+                })
+        result = EmailLog(
+            id=log.id,
+            subject=log.subject,
+            sender=log.sender,
+            body=rewritten_body,
+            attachments=processed_attachments,
+            summary=summaries,
+            processed=True,
+            received_at=log.received_at
+        )
+        monitor.db_manager.update_email_log(result)
+        return result.to_dict()
+    except Exception as e:
+        return {"error": str(e)}
