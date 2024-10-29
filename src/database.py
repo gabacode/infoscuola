@@ -28,6 +28,7 @@ class EmailLog(Base):
 
     def to_dict(self):
         return {
+            "id": self.id,
             "subject": self.subject,
             "sender": self.sender,
             "body": self.body,

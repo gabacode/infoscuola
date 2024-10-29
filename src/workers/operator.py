@@ -23,3 +23,16 @@ class Operator:
         except Exception as e:
             logging.error(f"Error asking question: {e}, {endpoint}")
             return None
+
+    def summarise_documents(self, attachments):
+        summaries = []
+        for document in attachments:
+            if document["text"]:
+                logging.info(f"Processing document: {document['file']}")
+                prompt = f"Genera un riassunto in italiano del documento {document['file']}: {document['text']}"
+                summary = self.ask(prompt)
+                summaries.append({
+                    "file": document["file"],
+                    "summary": summary
+                })
+        return summaries

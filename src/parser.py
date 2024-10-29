@@ -35,26 +35,27 @@ class Parser:
             return []
         results = []
         for attachment in attachments:
-            ext = attachment.split(".")[-1]
+            attachment_file = attachment["file"]
+            ext = attachment_file.split(".")[-1]
             if ext == "pdf":
-                self.pdf_reader.set_file_path(f"attachments/{attachment}")
+                self.pdf_reader.set_file_path(f"attachments/{attachment_file}")
                 text = self.pdf_reader.extract_text()
                 if text:
                     results.append({
-                        "file": attachment,
+                        "file": attachment_file,
                         "text": text
                     })
                 else:
                     ocr = self.pdf_reader.ocr_images()
                     results.append({
-                        "file": attachment,
+                        "file": attachment_file,
                         "text": ocr
                     })
             elif ext in ["doc", "docx"]:
-                self.doc_reader.set_file_path(f"attachments/{attachment}")
+                self.doc_reader.set_file_path(f"attachments/{attachment_file}")
                 text = self.doc_reader.extract_text()
                 results.append({
-                    "file": attachment,
+                    "file": attachment_file,
                     "text": text
                 })
             elif ext in ["jpg", "jpeg", "png", "gif"]:
