@@ -28,19 +28,21 @@ class Parser:
             time.sleep(interval_seconds)
 
     def process_attachments(self, attachments: list):
+        results = []
         for attachment in attachments:
             ext = attachment.split(".")[-1]
-            if ext in ["jpg", "jpeg", "png", "gif"]:
-                # TODO: Pass the image to a model for seeing its contents.
-                logging.info(f"Processing image attachment with extension: {ext}")
+            if ext == "pdf":
+                self.pdf_reader.set_file_path(f"attachments/{attachment}")
+                text = self.pdf_reader.extract_text()
+                if text:
+                    results.append(text)
+                else:
+                    ocr = self.pdf_reader.ocr_images()
+                    results.extend(ocr)
             elif ext in ["doc", "docx"]:
                 # TODO: Extract text from the document.
                 logging.info(f"Processing doc/docx ({ext})")
-            elif ext == "pdf":
-                self.pdf_reader.set_file_path(f"attachments/{attachment}")
-                text = self.pdf_reader.extract_text()
-                if not text:
-                    images = self.pdf_reader.extract_images()
-                    ocr = self.pdf_reader.ocr_images()
-                    logging.info(f"OCR results: {ocr}")
-                logging.info(f"Extracted text from PDF: {text}")
+            elif ext in ["jpg", "jpeg", "png", "gif"]:
+                # TODO: Pass the image to a model for seeing its contents.
+                logging.info(f"Processing image attachment with extension: {ext}")
+        return results

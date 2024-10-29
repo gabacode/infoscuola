@@ -145,8 +145,8 @@ def startup_event():
 @app.post("/process_email/{email_id}")
 def process_email(email_id: int):
     log: EmailLog = monitor.db_manager.read_email_log(email_id)
-    if not email:
-        return {"error": "Email not found."}
+    if not log:
+        return {"error": "Log not found."}
     attachments = log.attachments
-    parser.process_attachments(attachments)
-    return {"message": "Email processed."}
+    results = parser.process_attachments(attachments)
+    return {"message": results}
