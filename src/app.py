@@ -3,6 +3,7 @@ import threading
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 
 from database import EmailLog
 from monitor import EmailMonitor
@@ -14,6 +15,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 load_dotenv()
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 monitor = EmailMonitor()
 parser = Parser()

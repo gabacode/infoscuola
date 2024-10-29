@@ -81,7 +81,7 @@ class DatabaseManager:
         session = None
         try:
             session = self.Session()
-            return session.query(EmailLog).all()
+            return session.query(EmailLog).order_by(EmailLog.received_at.desc()).all()
         except Exception as e:
             print(f"Error reading email logs: {e}")
             logging.error(f"Error reading email logs: {e}")
