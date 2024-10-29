@@ -31,7 +31,7 @@ class EmailLog(Base):
             "subject": self.subject,
             "sender": self.sender,
             "body": self.body,
-            "attachments": self.attachments,
+            # "attachments": self.attachments,
             "summary": self.summary,
             "processed": self.processed,
             "received_at": self.received_at
@@ -69,6 +69,18 @@ class DatabaseManager:
         try:
             session = self.Session()
             return session.query(EmailLog).where(EmailLog.processed == False).all()
+        except Exception as e:
+            print(f"Error reading email logs: {e}")
+            logging.error(f"Error reading email logs: {e}")
+            return []
+        finally:
+            session.close()
+
+    def read_all_email_logs(self):
+        session = None
+        try:
+            session = self.Session()
+            return session.query(EmailLog).all()
         except Exception as e:
             print(f"Error reading email logs: {e}")
             logging.error(f"Error reading email logs: {e}")
