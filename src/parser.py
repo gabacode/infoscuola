@@ -2,6 +2,7 @@ import logging
 import time
 
 from database import DatabaseManager
+from readers.pdf import PDFReader
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
@@ -9,6 +10,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 class Parser:
     def __init__(self):
         self.db_manager = DatabaseManager()
+        self.pdf_reader = PDFReader()
         logging.info("Parser initialized.")
 
     def process_unprocessed_emails(self):
@@ -25,7 +27,7 @@ class Parser:
             logging.info(f"Sleeping for {interval_seconds} seconds.")
             time.sleep(interval_seconds)
 
-    def process_attachments(self, attachments):
+    def process_attachments(self, attachments: list):
         for attachment in attachments:
             ext = attachment.split(".")[-1]
             if ext in ["jpg", "jpeg", "png", "gif"]:
@@ -35,8 +37,10 @@ class Parser:
                 # TODO: Extract text from the document.
                 logging.info(f"Processing doc/docx ({ext})")
             elif ext == "pdf":
-                # TODO: Extract text from the PDF.
-                logging.info(f"Processing {ext} attachment.")
-            else:
-                # TODO: Handle other types of attachments.
-                logging.info(f"Processing attachment with extension: {ext}")
+                self.pdf_reader.set_file_path(f"attachments/{attachment}")
+                text = self.pdf_reader.extract_text()
+                if not text:
+                    images = self.pdf_reader.extract_images()
+                    ocr = self.pdf_reader.ocr_images()
+                    logging.info(f"OCR results: {ocr}")
+                logging.info(f"Extracted text from PDF: {text}")

@@ -19,6 +19,7 @@ class EmailLog(Base):
     sender = Column(String(255))
     body = Column(Text)
     attachments = Column(JSON)
+    summary = Column(Text, nullable=True)
     processed = Column(Boolean, default=False)
     received_at = Column(
         DateTime(timezone=True),
@@ -31,6 +32,7 @@ class EmailLog(Base):
             "sender": self.sender,
             "body": self.body,
             "attachments": self.attachments,
+            "summary": self.summary,
             "processed": self.processed,
             "received_at": self.received_at
         }
@@ -71,6 +73,18 @@ class DatabaseManager:
             print(f"Error reading email logs: {e}")
             logging.error(f"Error reading email logs: {e}")
             return []
+        finally:
+            session.close()
+
+    def read_email_log(self, email_id):
+        session = None
+        try:
+            session = self.Session()
+            return session.query(EmailLog).get(email_id)
+        except Exception as e:
+            print(f"Error reading email log: {e}")
+            logging.error(f"Error reading email log: {e}")
+            return None
         finally:
             session.close()
 

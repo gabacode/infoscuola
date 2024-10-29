@@ -10,8 +10,9 @@ from email.header import decode_header
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from database import DatabaseManager
+from database import DatabaseManager, EmailLog
 from parser import Parser
+from readers.pdf import PDFReader
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
@@ -140,3 +141,12 @@ parser = Parser()
 def startup_event():
     threading.Thread(target=monitor.run, daemon=True).start()
     threading.Thread(target=parser.start_periodic_check, args=(60,), daemon=True).start()
+
+@app.post("/process_email/{email_id}")
+def process_email(email_id: int):
+    log: EmailLog = monitor.db_manager.read_email_log(email_id)
+    if not email:
+        return {"error": "Email not found."}
+    attachments = log.attachments
+    parser.process_attachments(attachments)
+    return {"message": "Email processed."}
