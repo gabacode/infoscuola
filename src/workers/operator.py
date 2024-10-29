@@ -29,10 +29,10 @@ class Operator:
         for document in attachments:
             if document["text"]:
                 logging.info(f"Processing document: {document['file']}")
-                prompt = f"Genera un riassunto in italiano del documento {document['file']}: {document['text']}"
+                prompt = f"Genera un riassunto in italiano del documento, o circolare {document['file']}: {document['text']}"
                 summary = self.ask(prompt)
                 summaries.append({
                     "file": document["file"],
-                    "summary": summary
+                    "text": summary
                 })
         return summaries

@@ -101,15 +101,17 @@ class EmailMonitor:
         return subject
 
     def process_attachments(self, msg):
-        attachment_names = []
+        attachments = []
         for part in msg.walk():
             if part.get_content_maintype() == "multipart":
                 continue
             filename = part.get_filename()
             if filename:
                 safe_filename = self.save_attachment(part, filename)
-                attachment_names.append(safe_filename)
-        return attachment_names
+                attachments.append({
+                    "file": safe_filename,
+                })
+        return attachments
 
     @staticmethod
     def save_attachment(part, filename):

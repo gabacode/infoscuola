@@ -1,9 +1,10 @@
 import logging
 import time
 
-from database import DatabaseManager
+from database import DatabaseManager, EmailLog
 from readers.pdf import PDFReader
 from readers.docs import DocReader
+from workers.operator import Operator
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
@@ -13,13 +14,28 @@ class Parser:
         self.db_manager = DatabaseManager()
         self.pdf_reader = PDFReader()
         self.doc_reader = DocReader()
+        self.operator = Operator()
         logging.info("Parser initialized.")
 
     def process_unprocessed_emails(self):
-        mails = self.db_manager.read_email_logs()
-        logging.info(f"Read {len(mails)} emails.")
-        for mail in mails:
-            self.process_attachments(mail.attachments)
+        logs = self.db_manager.read_email_logs()
+        logging.info(f"Read {len(logs)} emails.")
+        for log in logs:
+            body = self.operator.ask(f"Riscrivi il seguente testo conservando solo i contenuti essenziali: {log.body}")
+            attachments = self.process_attachments(log.attachments)
+            summaries = self.operator.summarise_documents(attachments)
+            result = EmailLog(
+                id=log.id,
+                subject=log.subject,
+                sender=log.sender,
+                body=body,
+                attachments=attachments,
+                summary=summaries,
+                processed=True,
+                received_at=log.received_at
+            )
+            self.db_manager.update_email_log(result)
+            logging.info(f"Processed email: {log.id}")
 
     def start_periodic_check(self, interval_seconds=10):
         """Run periodic check for unprocessed emails."""
@@ -35,6 +51,7 @@ class Parser:
             return []
         results = []
         for attachment in attachments:
+            logging.info(f"Processing attachment: {attachment['file']}")
             attachment_file = attachment["file"]
             ext = attachment_file.split(".")[-1]
             if ext == "pdf":
