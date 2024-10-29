@@ -19,7 +19,7 @@ class EmailLog(Base):
     sender = Column(String(255))
     body = Column(Text)
     attachments = Column(JSON)
-    summary = Column(Text, nullable=True)
+    summary = Column(JSON, nullable=True)
     processed = Column(Boolean, default=False)
     received_at = Column(
         DateTime(timezone=True),

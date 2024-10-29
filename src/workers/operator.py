@@ -1,27 +1,25 @@
 import logging
 
-from ollama import Client, chat
+from ollama import Client
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
-endpoint = "http://localhost:11434"
+endpoint = "http://ollama:11434"
+
 
 class Operator:
     def __init__(self):
-        self.model = "gemma2:latest"
         self.client = Client(host=endpoint)
+        self.model = "gemma2:latest"
 
     def ask(self, question):
         try:
-            messages = [
-                {
-                    'role': 'user',
-                    'content': question,
-                },
-            ]
-            response = chat(model=self.model, messages=messages)
-            logging.info(response)
-            return response
+            messages = [{'role': 'user', 'content': question}]
+            response = self.client.chat(
+                model=self.model,
+                messages=messages
+            )
+            return response["message"]["content"].replace("\n", " ").replace("  ", " ")
         except Exception as e:
             logging.error(f"Error asking question: {e}, {endpoint}")
             return None

@@ -121,7 +121,7 @@ class EmailMonitor:
         return safe_filename
 
     def run(self):
-        wait = 15
+        wait = 60
         try:
             while True:
                 if self.check_for_new_emails():
@@ -138,27 +138,40 @@ monitor = EmailMonitor()
 parser = Parser()
 operator = Operator()
 
+
 @app.on_event("startup")
 def startup_event():
     threading.Thread(target=monitor.run, daemon=True).start()
     threading.Thread(target=parser.start_periodic_check, args=(60,), daemon=True).start()
 
-@app.post("/process_email/{email_id}")
-def process_email(email_id: int) -> dict:
+
+@app.post("/process/{email_id}")
+async def process_email(email_id: int) -> dict:
     try:
         log: EmailLog = monitor.db_manager.read_email_log(email_id)
         if not log:
             return {"error": "Log not found."}
+        body = log.body
+        prompt = f"Riscrivi il seguente testo conservando solo i contenuti essenziali: {body}"
+        rewritten_body = operator.ask(prompt)
         processed_attachments = parser.process_attachments(log.attachments)
 
-        summary = operator.ask("How are things today?")
-
+        summaries = []
+        for document in processed_attachments:
+            if document["text"]:
+                logging.info(f"Processing document: {document['file']}")
+                prompt = f"Genera un riassunto in italiano del documento {document['file']}: {document['text']}"
+                summary = operator.ask(prompt)
+                summaries.append({
+                    "file": document["file"],
+                    "summary": summary
+                })
         result = EmailLog(
             subject=log.subject,
             sender=log.sender,
-            body=log.body,
+            body=rewritten_body,
             attachments=processed_attachments,
-            summary=summary,
+            summary=summaries,
             processed=True,
             received_at=log.received_at
         )
