@@ -12,7 +12,7 @@ from fastapi import FastAPI
 
 from database import DatabaseManager, EmailLog
 from parser import Parser
-from readers.pdf import PDFReader
+from workers.operator import Operator
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
@@ -136,6 +136,7 @@ class EmailMonitor:
 
 monitor = EmailMonitor()
 parser = Parser()
+operator = Operator()
 
 @app.on_event("startup")
 def startup_event():
@@ -143,10 +144,24 @@ def startup_event():
     threading.Thread(target=parser.start_periodic_check, args=(60,), daemon=True).start()
 
 @app.post("/process_email/{email_id}")
-def process_email(email_id: int):
-    log: EmailLog = monitor.db_manager.read_email_log(email_id)
-    if not log:
-        return {"error": "Log not found."}
-    attachments = log.attachments
-    results = parser.process_attachments(attachments)
-    return {"message": results}
+def process_email(email_id: int) -> dict:
+    try:
+        log: EmailLog = monitor.db_manager.read_email_log(email_id)
+        if not log:
+            return {"error": "Log not found."}
+        processed_attachments = parser.process_attachments(log.attachments)
+
+        summary = operator.ask("How are things today?")
+
+        result = EmailLog(
+            subject=log.subject,
+            sender=log.sender,
+            body=log.body,
+            attachments=processed_attachments,
+            summary=summary,
+            processed=True,
+            received_at=log.received_at
+        )
+        return result.to_dict()
+    except Exception as e:
+        return {"error": str(e)}
