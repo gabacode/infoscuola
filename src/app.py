@@ -38,22 +38,6 @@ async def process_email(email_id: int) -> dict:
         log: EmailLog = monitor.db_manager.read_email_log(email_id)
         if not log:
             return {"error": "Log not found."}
-
-        body = operator.ask(f"Riscrivi il seguente testo conservando solo i contenuti essenziali: {log.body}")
-        attachments = parser.process_attachments(log.attachments)
-        summaries = operator.summarise_documents(attachments)
-
-        result = EmailLog(
-            id=log.id,
-            subject=log.subject,
-            sender=log.sender,
-            body=body,
-            attachments=attachments,
-            summary=summaries,
-            processed=True,
-            received_at=log.received_at
-        )
-        monitor.db_manager.update_email_log(result)
-        return result.to_dict()
+        return parser.process_email(log)
     except Exception as e:
         return {"error": str(e)}
