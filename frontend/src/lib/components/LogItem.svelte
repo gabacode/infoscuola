@@ -4,13 +4,18 @@
 	import LogSummary from './LogSummary.svelte';
 
 	export let log: Log;
+	export const date = new Date(log.received_at).toLocaleString();
 </script>
 
 <li class="rounded-lg border bg-white p-4 shadow-md">
-	<small><strong>ID:</strong> {log.id}</small>
-	<h2 class="text-lg font-bold">{log.subject}</h2>
-	<p><strong>Mittente:</strong> {log.sender}</p>
-	<p><strong>Ricevuta il:</strong> {new Date(log.received_at).toLocaleString()}</p>
+	<div>
+		<small><strong>ID:</strong> {log.id}</small>
+		<h2 class="text-lg font-bold">{log.subject}</h2>
+	</div>
+	<div>
+		<small class="block"><strong>Mittente:</strong> {log.sender}</small>
+		<small class="block"><strong>Ricevuta il:</strong> {date}</small>
+	</div>
 
 	{#if log.body}
 		<LogContent content={log.body} />
