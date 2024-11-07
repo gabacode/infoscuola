@@ -1,8 +1,8 @@
 # infoscuola
 
-Parser for incoming emails and attachments with OCR and LLMs.
+This app automates the parsing of incoming emails and attachments using OCR (Optical Character Recognition) and LLMs (Large Language Models). It generates concise summaries of school notices (or any other documents) and forwards them to a specified list of email addresses, ensuring key information is quickly accessible.
 
-The application is used to automatically send summaries of school notices and their attachments to a list of email addresses, but it can be applied to any usage really.
+Adaptable for various applications, it’s designed to simplify document processing, enhance productivity, and keep everyone informed.
 
 Play safe and enjoy!
 
