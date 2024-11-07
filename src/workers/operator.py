@@ -19,7 +19,7 @@ class Operator:
                 model=self.model,
                 messages=messages
             )
-            return response["message"]["content"].replace("\n", " ").replace("  ", " ")
+            return response["message"]["content"]
         except Exception as e:
             logging.error(f"Error asking question: {e}, {endpoint}")
             return None
