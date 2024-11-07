@@ -7,6 +7,8 @@ from email.mime.text import MIMEText
 import markdown
 from dotenv import load_dotenv
 
+from database import EmailLog
+
 load_dotenv()
 
 
@@ -16,6 +18,7 @@ class Sender:
         self.port = int(os.getenv("SMTP_PORT", 465))
         self.email_account = os.getenv("EMAIL_ACCOUNT")
         self.password = os.getenv("PASSWORD")
+        self.recipients = os.getenv("RECIPIENTS").split(",")
 
     def connect_to_smtp(self):
         try:
@@ -57,9 +60,17 @@ class Sender:
             if server:
                 server.quit()
 
-    def send_emails(self, mail_id, recipients, subject, body) -> list[dict]:
+    @staticmethod
+    def email_transformer(email: EmailLog) -> EmailLog:
+        email.subject = f"Riassunto Circolare: {email.subject}"
+        summarised_body = "\n".join([f"Allegato {i+1}: {summary['text']}" for i, summary in enumerate(email.summary)])
+        email.body = email.body + "\n\n" + summarised_body
+        return email
+
+    def send_emails(self, log: EmailLog) -> list[dict]:
+        log = self.email_transformer(log)
         responses = []
-        for recipient in recipients:
-            response = self.send_email(mail_id, recipient, subject, body)
+        for recipient in self.recipients:
+            response = self.send_email(log.id, recipient, log.subject, log.body)
             responses.append(response)
         return responses

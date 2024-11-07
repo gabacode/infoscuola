@@ -9,6 +9,7 @@ from database import EmailLog
 from monitor import EmailMonitor
 from parser import Parser
 from workers.operator import Operator
+from workers.sender import Sender
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
@@ -24,9 +25,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 monitor = EmailMonitor()
 parser = Parser()
+sender = Sender()
 operator = Operator()
 
 
@@ -49,5 +50,16 @@ async def process_email(email_id: int) -> dict:
         if not log:
             return {"error": "Log not found."}
         return parser.process_email(log)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/forward/{email_id}")
+async def forward_email(email_id: int):
+    try:
+        log: EmailLog = monitor.db_manager.read_email_log(email_id)
+        if not log:
+            return {"error": "Log not found."}
+        return sender.send_emails(log)
     except Exception as e:
         return {"error": str(e)}
