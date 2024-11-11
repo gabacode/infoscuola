@@ -7,6 +7,5 @@ Adaptable for various applications, it’s designed to simplify document process
 Play safe and enjoy!
 
 ### Instructions
-```bash
-docker compose up
-```
+1. Edit the `src/.env.example` file and fill in your information (save as `.env`)
+2. `docker compose up`
