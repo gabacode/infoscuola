@@ -4,6 +4,7 @@ import time
 from database import DatabaseManager, EmailLog
 from readers.pdf import PDFReader
 from readers.docs import DocReader
+from workers.sender import Sender
 from workers.operator import Operator
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -15,6 +16,7 @@ class Parser:
         self.pdf_reader = PDFReader()
         self.doc_reader = DocReader()
         self.operator = Operator()
+        self.sender = Sender()
         logging.info("Parser initialized.")
 
     def process_email(self, log: EmailLog):
@@ -32,6 +34,7 @@ class Parser:
             received_at=log.received_at
         )
         self.db_manager.update_email_log(result)
+        self.sender.send_emails(result)
         logging.info(f"Processed email: {log.id}")
         return result.to_dict()
 
