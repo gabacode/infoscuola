@@ -1,10 +1,11 @@
 import logging
+import os
 
 from ollama import Client
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
-endpoint = "http://ollama:11434"
+endpoint = os.getenv("OLLAMA_HOST", "http://ollama:11434")
 
 
 class Operator:

@@ -16,7 +16,6 @@ services:
       - RECIPIENTS=${RECIPIENTS}
     depends_on:
       - postgres
-      - ollama
     ports:
       - "8000:8000"
     networks:
@@ -40,30 +39,6 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     restart: unless-stopped
-
-  ollama:
-    volumes:
-      - ./ollama/ollama:/root/.ollama
-    container_name: ollama
-    pull_policy: always
-    tty: true
-    restart: unless-stopped
-    image: ollama/ollama:latest
-    ports:
-      - "7869:11434"
-    environment:
-      - OLLAMA_KEEP_ALIVE=24h
-      - OLLAMA_HOST=0.0.0.0:11434
-      - OLLAMA_ORIGINS=http://0.0.0.0:11434
-    networks:
-      - infoscuolanet
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
 
 volumes:
   pg_data:

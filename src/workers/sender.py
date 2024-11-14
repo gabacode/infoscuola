@@ -5,11 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import markdown
-from dotenv import load_dotenv
-
 from database import EmailLog
-
-load_dotenv()
 
 
 class Sender:
@@ -63,7 +59,7 @@ class Sender:
     @staticmethod
     def email_transformer(email: EmailLog) -> EmailLog:
         email.subject = f"Riassunto Circolare: {email.subject}"
-        summarised_body = "\n".join([f"Allegato {i+1}: {summary['text']}" for i, summary in enumerate(email.summary)])
+        summarised_body = "\n".join([f"Allegato {i + 1}: {summary['text']}" for i, summary in enumerate(email.summary)])
         email.body = email.body + "\n\n" + summarised_body
         return email
 
