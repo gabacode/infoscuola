@@ -6,11 +6,7 @@ import re
 import time
 from email.header import decode_header
 
-from dotenv import load_dotenv
-
 from database import DatabaseManager
-
-load_dotenv()
 
 
 class EmailMonitor:

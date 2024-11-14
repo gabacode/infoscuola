@@ -1,7 +1,6 @@
 import logging
 import threading
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
@@ -12,8 +11,6 @@ from workers.operator import Operator
 from workers.sender import Sender
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
-
-load_dotenv()
 
 app = FastAPI()
 
