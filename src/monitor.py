@@ -24,6 +24,7 @@ class EmailMonitor:
             mail = imaplib.IMAP4_SSL(self.imap_server, timeout=30)
             mail.login(self.email_account, self.password)
             mail.select("inbox")
+            logging.info("Connected to IMAP server.")
             return mail
         except Exception as e:
             logging.error(f"Failed to connect to IMAP server: {e}")
@@ -147,7 +148,7 @@ class EmailMonitor:
                     self.reconnect_to_imap()
                 except Exception as e:
                     logging.error(f"Unexpected error: {e}")
-                    time.sleep(wait)  # Avoid busy looping
+                    time.sleep(wait)
         except KeyboardInterrupt:
             logging.info("Stopped email checker.")
         finally:
