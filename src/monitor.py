@@ -38,6 +38,8 @@ class EmailMonitor:
         except Exception as e:
             logging.warning(f"Error during logout: {e}")
         self.mail = self.connect_to_imap()
+        if not self.mail:
+            logging.error("Failed to reconnect to the IMAP server.")
 
     def fetch_email(self, email_id):
         res, msg_data = self.mail.fetch(email_id, "(RFC822)")
@@ -138,6 +140,14 @@ class EmailMonitor:
         try:
             while True:
                 try:
+                    if self.mail is None:
+                        logging.warning("IMAP connection is None. Reconnecting...")
+                        self.reconnect_to_imap()
+                        if self.mail is None:
+                            logging.error("Unable to reconnect. Retrying in {wait} seconds.")
+                            time.sleep(wait)
+                            continue
+
                     self.mail.noop()
                     if self.check_for_new_emails():
                         continue
@@ -152,4 +162,5 @@ class EmailMonitor:
         except KeyboardInterrupt:
             logging.info("Stopped email checker.")
         finally:
-            self.mail.logout()
+            if self.mail:
+                self.mail.logout()
