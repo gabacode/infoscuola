@@ -20,10 +20,26 @@ class EmailMonitor:
         os.makedirs("attachments", exist_ok=True)
 
     def connect_to_imap(self):
-        mail = imaplib.IMAP4_SSL(self.imap_server)
-        mail.login(self.email_account, self.password)
-        mail.select("inbox")
-        return mail
+        try:
+            mail = imaplib.IMAP4_SSL(self.imap_server, timeout=30)
+            mail.login(self.email_account, self.password)
+            mail.select("inbox")
+            logging.info("Connected to IMAP server.")
+            return mail
+        except Exception as e:
+            logging.error(f"Failed to connect to IMAP server: {e}")
+            return None
+
+    def reconnect_to_imap(self):
+        logging.info("Attempting to reconnect to the IMAP server...")
+        try:
+            if self.mail:
+                self.mail.logout()
+        except Exception as e:
+            logging.warning(f"Error during logout: {e}")
+        self.mail = self.connect_to_imap()
+        if not self.mail:
+            logging.error("Failed to reconnect to the IMAP server.")
 
     def fetch_email(self, email_id):
         res, msg_data = self.mail.fetch(email_id, "(RFC822)")
@@ -33,30 +49,39 @@ class EmailMonitor:
         return None
 
     def check_for_new_emails(self):
-        status, messages = self.mail.search(None, 'UNSEEN')
-        if status != "OK":
-            logging.error("Failed to search for new emails.")
-            return False
+        try:
+            status, messages = self.mail.search(None, 'UNSEEN')
+            if status != "OK":
+                logging.error("Failed to search for new emails.")
+                return False
 
-        email_ids = messages[0].split()
-        if not email_ids:
-            return False
+            email_ids = messages[0].split()
+            if not email_ids:
+                return False
 
-        for email_id in email_ids:
-            msg = self.fetch_email(email_id)
-            if msg:
-                subject = self.get_email_subject(msg)
-                logging.info(f"New email received: {subject}")
-                body = self.get_email_body(msg).strip()
-                sender = msg["From"]
-                attachments = self.process_attachments(msg)
-                self.db_manager.log_email(
-                    subject=subject,
-                    sender=sender,
-                    body=body,
-                    attachments=attachments
-                )
-        return True
+            for email_id in email_ids:
+                msg = self.fetch_email(email_id)
+                if msg:
+                    subject = self.get_email_subject(msg)
+                    logging.info(f"New email received: {subject}")
+                    body = self.get_email_body(msg).strip()
+                    sender = msg["From"]
+                    attachments = self.process_attachments(msg)
+                    self.db_manager.log_email(
+                        subject=subject,
+                        sender=sender,
+                        body=body,
+                        attachments=attachments
+                    )
+            return True
+
+        except imaplib.IMAP4.abort as e:
+            logging.warning(f"IMAP connection aborted: {e}")
+            self.reconnect_to_imap()
+            return False
+        except Exception as e:
+            logging.error(f"Error while checking for new emails: {e}")
+            return False
 
     @staticmethod
     def get_email_body(msg):
@@ -114,11 +139,28 @@ class EmailMonitor:
         wait = 60
         try:
             while True:
-                if self.check_for_new_emails():
-                    continue
-                logging.info(f"No new emails. Retrying in {wait} seconds.")
-                time.sleep(wait)
+                try:
+                    if self.mail is None:
+                        logging.warning("IMAP connection is None. Reconnecting...")
+                        self.reconnect_to_imap()
+                        if self.mail is None:
+                            logging.error("Unable to reconnect. Retrying in {wait} seconds.")
+                            time.sleep(wait)
+                            continue
+
+                    self.mail.noop()
+                    if self.check_for_new_emails():
+                        continue
+                    logging.info(f"No new emails. Retrying in {wait} seconds.")
+                    time.sleep(wait)
+                except imaplib.IMAP4.abort:
+                    logging.warning("IMAP server disconnected. Reconnecting...")
+                    self.reconnect_to_imap()
+                except Exception as e:
+                    logging.error(f"Unexpected error: {e}")
+                    time.sleep(wait)
         except KeyboardInterrupt:
             logging.info("Stopped email checker.")
         finally:
-            self.mail.logout()
+            if self.mail:
+                self.mail.logout()

@@ -1,5 +1,5 @@
 import logging
-import threading
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
@@ -30,8 +30,9 @@ operator = Operator()
 
 @app.on_event("startup")
 def startup_event():
-    threading.Thread(target=monitor.run, daemon=True).start()
-    threading.Thread(target=parser.start_periodic_check, args=(60,), daemon=True).start()
+    executor = ThreadPoolExecutor(max_workers=2)
+    executor.submit(monitor.run)
+    executor.submit(parser.start_periodic_check, 60)
 
 
 @app.get("/logs")

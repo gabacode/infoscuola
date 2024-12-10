@@ -2,10 +2,10 @@ import logging
 import time
 
 from database import DatabaseManager, EmailLog
-from readers.pdf import PDFReader
 from readers.docs import DocReader
-from workers.sender import Sender
+from readers.pdf import PDFReader
 from workers.operator import Operator
+from workers.sender import Sender
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
@@ -20,37 +20,45 @@ class Parser:
         logging.info("Parser initialized.")
 
     def process_email(self, log: EmailLog):
-        body = self.operator.ask(f"Riscrivi il seguente testo conservando solo i contenuti essenziali: {log.body}")
-        attachments = self.process_attachments(log.attachments)
-        summaries = self.operator.summarise_documents(attachments)
-        result = EmailLog(
-            id=log.id,
-            subject=log.subject,
-            sender=log.sender,
-            body=body,
-            attachments=attachments,
-            summary=summaries,
-            processed=True,
-            received_at=log.received_at
-        )
-        self.db_manager.update_email_log(result)
-        self.sender.send_emails(result)
-        logging.info(f"Processed email: {log.id}")
-        return result.to_dict()
+        try:
+            body = self.operator.ask(f"Riscrivi il seguente testo conservando solo i contenuti essenziali: {log.body}")
+            attachments = self.process_attachments(log.attachments)
+            summaries = self.operator.summarise_documents(attachments)
+            result = EmailLog(
+                id=log.id,
+                subject=log.subject,
+                sender=log.sender,
+                body=body,
+                attachments=attachments,
+                summary=summaries,
+                processed=True,
+                received_at=log.received_at
+            )
+            self.db_manager.update_email_log(result)
+            self.sender.send_emails(result)
+            logging.info(f"Processed email: {log.id}")
+            return result.to_dict()
+        except Exception as e:
+            logging.error(f"Failed to process email {log.id}: {e}")
+            return None
 
     def process_unprocessed_emails(self):
         logs = self.db_manager.read_email_logs()
         logging.info(f"Read {len(logs)} emails.")
         for log in logs:
-           self.process_email(log)
+            self.process_email(log)
 
     def start_periodic_check(self, interval_seconds=10):
         """Run periodic check for unprocessed emails."""
         logging.info(f"Starting periodic check for unprocessed emails every {interval_seconds} seconds.")
         while True:
-            self.process_unprocessed_emails()
-            logging.info(f"Sleeping for {interval_seconds} seconds.")
-            time.sleep(interval_seconds)
+            try:
+                self.process_unprocessed_emails()
+            except Exception as e:
+                logging.error(f"Error during periodic check: {e}")
+            finally:
+                logging.info(f"Sleeping for {interval_seconds} seconds.")
+                time.sleep(interval_seconds)
 
     def process_attachments(self, attachments: list):
         if not attachments:

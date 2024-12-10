@@ -5,11 +5,11 @@ DOCKER_COMPOSE := docker compose
 start:
 	@bash -c "$(DOCKER_COMPOSE) up -d"
 
-restart:
-	@bash -c "$(DOCKER_COMPOSE) down && $(DOCKER_COMPOSE) up -d"
-
 stop:
 	@bash -c "$(DOCKER_COMPOSE) down"
+
+restart:
+	@bash -c "$(DOCKER_COMPOSE) down && $(DOCKER_COMPOSE) up -d"
 
 build:
 	@bash -c "$(DOCKER_COMPOSE) build"
@@ -51,4 +51,4 @@ help:
 	@echo "  build-ext    - Build the application in external mode"
 	@echo "======================================================="
 
-.PHONY: install start stop restart build start-ext stop-ext restart-ext logs help
+.PHONY: start stop restart build start-ext stop-ext restart-ext build-ext logs help
